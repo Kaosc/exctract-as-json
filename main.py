@@ -34,9 +34,9 @@ class Exctractor:
       urls = []
 
       self.browser.get(baseUrl)
-      time.sleep(2)
+      time.sleep(3)
 
-      aList = self.browser.find_elements(By.XPATH, '/html/body/div/div/div/div/div/div/div/div/div/div/ul/li/a')
+      aList = self.browser.find_elements(By.XPATH, '//*[@class="aq-quizzes"]/li/a')
 
       for a in aList:
          urls.append(a.get_attribute("href"))
@@ -83,7 +83,6 @@ class Exctractor:
                "TR": "",
                "EN": ""
             },
-            "questionImage": ""
          }
 
          # get question
@@ -91,7 +90,9 @@ class Exctractor:
          
          # get image
          try:
-            question["questionImage"] = tr.find_element(By.CLASS_NAME, "aq-question-content").find_element(By.TAG_NAME, "img").get_attribute("src") 
+            question.__setitem__("questionImage", {
+               "uri": tr.find_element(By.CLASS_NAME, "aq-question-content").find_element(By.TAG_NAME, "img").get_attribute("src") 
+            }) 
          except:
             pass
          
@@ -99,7 +100,6 @@ class Exctractor:
          answers = tr.find_elements(By.CLASS_NAME, "aq-answer")
          for answer in answers:
             question["answers"]["TR"].append(answer.text)
-            
 
          # get correct answer
          tbody = tr.find_element(By.TAG_NAME, "tbody")
@@ -115,7 +115,10 @@ class Exctractor:
             except:
                pass
 
-         question["correctAnswer"]["TR"] = question["answers"]["TR"][correctAnswerIndex]
+         try:
+            question["correctAnswer"]["TR"] = question["answers"]["TR"][correctAnswerIndex]
+         except:
+            print(f"Error: correct answer not found - {question['question']['TR']}")
 
          self.questions.append(question)
 
@@ -129,6 +132,8 @@ class Exctractor:
             file.write(seriliazedQuestion + ",\n")
       with open(f"{name}.json", "a", encoding="utf-8") as file:
          file.write("]")
+
+      self.questions = []
       
 exctractor = Exctractor()
 
