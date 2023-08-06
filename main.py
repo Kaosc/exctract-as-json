@@ -30,8 +30,21 @@ class Exctractor:
       self.browserProfile.add_experimental_option('prefs', {"intl.accept_languages": "en,en_US"})
       self.browser = webdriver.Chrome(service=self.service, options=self.browserProfile)
 
-   def extract(self, url, index, total):
-      print(f"Crawling: {index}/{total}")
+   def getUrls(self, baseUrl):
+      urls = []
+
+      self.browser.get(baseUrl)
+      time.sleep(2)
+
+      aList = self.browser.find_elements(By.XPATH, '/html/body/div/div/div/div/div/div/div/div/div/div/ul/li/a')
+
+      for a in aList:
+         urls.append(a.get_attribute("href"))
+
+      return urls
+
+   def extract(self, url, index, total, name):
+      print(f"Crawling: {index}/{total} - {name}")
 
       self.browser.get(url)
       time.sleep(3)
@@ -96,38 +109,41 @@ class Exctractor:
          correctAnswerIndex = 0
          for i in range(len(correctAnswerTrs)):
             try: 
-               if correctAnswerTrs[i].find_element(By.TAG_NAME, "td").get_attribute("class") == "icon-ok":
-                  correctAnswerIndex = i
-                  break
+               correctAnswerTrs[i].find_element(By.TAG_NAME, "i")
+               correctAnswerIndex = i
+               break
             except:
                pass
-               
+
          question["correctAnswer"]["TR"] = question["answers"]["TR"][correctAnswerIndex]
 
          self.questions.append(question)
 
-   def writeToFile(self):
-      with open("questions.json", "w", encoding="utf-8") as file:
+   def writeToFile(self, name):
+      with open(f"{name}.json", "w", encoding="utf-8") as file:
          file.write("[")
          file.write("\n")
       for question in self.questions:
          seriliazedQuestion = json.dumps(question, indent=4, ensure_ascii=False)
-         with open("questions.json", "a", encoding="utf-8") as file:
+         with open(f"{name}.json", "a", encoding="utf-8") as file:
             file.write(seriliazedQuestion + ",\n")
-      with open("questions.json", "a", encoding="utf-8") as file:
+      with open(f"{name}.json", "a", encoding="utf-8") as file:
          file.write("]")
       
 exctractor = Exctractor()
 
-# while True:
-#    url = input("URL: ")
-#    exctractor.extract(url)
+baseUrls = []
 
-urlList = []
+for baseUrl in baseUrls:
+   name = baseUrl["name"]
+   url = baseUrl["url"]
 
-total = len(urlList)
+   print(f"Base url: {name}")
+   urlList = exctractor.getUrls(url)
 
-for i in range(0, len(urlList)):
-   exctractor.extract(urlList[i], i, total)
+   total = len(urlList)
 
-exctractor.writeToFile()
+   for i in range(0, len(urlList)):
+      exctractor.extract(urlList[i], i, total, name), 
+
+   exctractor.writeToFile(name)
